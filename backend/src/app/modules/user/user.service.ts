@@ -36,6 +36,7 @@ const createUser = async (payload: IUser) => {
     auths: [authProvider],
     ...rest,
   });
+
   user.password = "";
   return user;
 };
@@ -62,7 +63,6 @@ const updateUser = async (
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
 
-  // Prevent tampering with auth providers
   if ("auths" in payload) {
     throw new AppError(
       StatusCodes.FORBIDDEN,
@@ -70,7 +70,6 @@ const updateUser = async (
     );
   }
 
-  // Restrict role changes
   if ("role" in payload) {
     if (decodedToken.role === Role.USER || decodedToken.role === Role.GUIDE) {
       throw new AppError(StatusCodes.FORBIDDEN, "You are not authorized");
@@ -86,7 +85,6 @@ const updateUser = async (
     }
   }
 
-  // Restrict sensitive status fields
   if (
     "isActive" in payload ||
     "isDeleted" in payload ||
@@ -97,7 +95,6 @@ const updateUser = async (
     }
   }
 
-  // Hash password if updating
   if (payload.password) {
     payload.password = await bcrypt.hash(
       payload.password,

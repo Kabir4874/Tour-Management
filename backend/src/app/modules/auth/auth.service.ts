@@ -1,8 +1,11 @@
 import bcrypt from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
+import type { JwtPayload } from "jsonwebtoken";
 import envVars from "../../config/env.js";
 import AppError from "../../errorHelpers/AppError.js";
-import { generateToken } from "../../utils/jwt.js";
+import { verifyToken } from "../../utils/jwt.js";
+import { createAccessToken, createTokens } from "../../utils/token.js";
+import { IsActive } from "../user/user.interface.js";
 import User from "../user/user.model.js";
 
 const credentialsLogin = async (payload: {
@@ -22,19 +25,39 @@ const credentialsLogin = async (payload: {
     throw new AppError(StatusCodes.BAD_REQUEST, "Wrong credentials");
   }
 
-  const jwtPayload = {
-    userId: user._id,
-    email: user.email,
-    role: user.role,
-  };
-  const accessToken = generateToken(
-    jwtPayload,
-    envVars.JWT_ACCESS_SECRET,
-    envVars.JWT_ACCESS_EXPIRES
-  );
+  const { accessToken, refreshToken } = createTokens(user);
+
+  user.password = "";
+  return { accessToken, refreshToken, user };
+};
+
+const getNewAccessToken = async (refreshToken: string) => {
+  const verifiedRefreshToken = verifyToken(
+    refreshToken,
+    envVars.JWT_REFRESH_SECRET
+  ) as JwtPayload;
+
+  const user = await User.findById(verifiedRefreshToken.userId);
+
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User does not exist");
+  }
+  if (
+    user.isActive === IsActive.BLOCKED ||
+    user.isActive === IsActive.INACTIVE
+  ) {
+    throw new AppError(StatusCodes.BAD_REQUEST, `User is ${user.isActive}`);
+  }
+  if (user.isDeleted) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "User is deleted");
+  }
+
+  const accessToken = createAccessToken(user);
+
   return { accessToken };
 };
 
 export const Authservice = {
   credentialsLogin,
+  getNewAccessToken,
 };
