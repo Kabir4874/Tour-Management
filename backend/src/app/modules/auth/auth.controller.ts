@@ -114,7 +114,6 @@ const googleCallback = catchAsync(async (req, res) => {
   res.redirect(`${envVars.FRONTEND_URL}/${redirectTo}`);
 });
 
-
 export const AuthController = {
   credentialsLogin,
   getNewAccessToken,
