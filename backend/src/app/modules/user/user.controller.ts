@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import type { JwtPayload } from "jsonwebtoken";
 import { catchAsync } from "../../utils/catchAsync.js";
 import sendResponse from "../../utils/sendResponse.js";
 import { UserService } from "./user.service.js";
@@ -26,7 +27,7 @@ const getAllUsers = catchAsync(async (req, res) => {
 
 const updateUser = catchAsync(async (req, res) => {
   const userId = req.params.id as string;
-  const verifiedToken = req.user;
+  const verifiedToken = req.user as JwtPayload;
   const user = await UserService.updateUser(userId, req.body, verifiedToken);
   sendResponse(res, {
     statusCode: StatusCodes.OK,

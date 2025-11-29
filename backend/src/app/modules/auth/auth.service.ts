@@ -57,7 +57,29 @@ const getNewAccessToken = async (refreshToken: string) => {
   return { accessToken };
 };
 
+const resetPassword = async (
+  oldPassword: string,
+  newPassword: string,
+  decodedToken: JwtPayload
+) => {
+  const user = await User.findById(decodedToken.userId).select("+password");
+  if (!user?.password) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Password not found");
+  }
+  const isOldPasswordMatched = await bcrypt.compare(oldPassword, user.password);
+  if (!isOldPasswordMatched) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Old password does not match");
+  }
+  const newHashedPassword = await bcrypt.hash(
+    newPassword,
+    envVars.BCRYPT_SALT_ROUND
+  );
+  user.password = newHashedPassword;
+  await user.save();
+};
+
 export const Authservice = {
   credentialsLogin,
   getNewAccessToken,
+  resetPassword,
 };
