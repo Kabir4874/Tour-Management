@@ -1,14 +1,39 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-console */
+import bcrypt from "bcryptjs";
 import passport from "passport";
 import {
   Strategy as GoogleStrategy,
   type Profile,
   type VerifyCallback,
 } from "passport-google-oauth20";
+import { Strategy as LocalStrategy } from "passport-local";
 import { IProvider, Role, type IUser } from "../modules/user/user.interface.js";
 import User from "../modules/user/user.model.js";
 import envVars from "./env.js";
+
+passport.use(
+  new LocalStrategy(
+    { usernameField: "email", passwordField: "password" },
+    async (email: string, password: string, done: VerifyCallback) => {
+      try {
+        const user = await User.findOne({ email }).select("+password");
+        if (!user) {
+          return done(null, false, { message: "Wrong credentials" });
+        }
+        const isMatched = bcrypt.compare(password, user.password as string);
+        if (!isMatched) {
+          return done(null, false, { message: "Wrong credentials" });
+        }
+
+        return done(null, user);
+      } catch (error) {
+        console.log("Custom strategy error", error);
+        return done(error);
+      }
+    }
+  )
+);
 
 passport.use(
   new GoogleStrategy(
