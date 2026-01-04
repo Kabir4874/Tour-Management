@@ -9,24 +9,33 @@ import sendResponse from "../../utils/sendResponse.js";
 import { createTokens } from "../../utils/token.js";
 import { Authservice } from "./auth.service.js";
 
-const credentialsLogin = catchAsync(async (req, res) => {
-  const result = await Authservice.credentialsLogin(req.body);
-  const { accessToken, refreshToken } = result;
-
-  setAuthCookies(
-    res,
-    { accessToken, refreshToken },
-    {
-      secure: envVars.NODE_ENV === "production",
+const credentialsLogin = catchAsync(async (req, res, next) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  passport.authenticate("local", async (error: any, user: any, info: any) => {
+    if (error) {
+      return next(error);
     }
-  );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "User login successful",
-    data: result,
-  });
+    if (!user) {
+      return next(new AppError(401, info.message));
+    }
+
+    const { accessToken, refreshToken } = createTokens(user);
+    setAuthCookies(
+      res,
+      { accessToken, refreshToken },
+      {
+        secure: envVars.NODE_ENV === "production",
+      }
+    );
+    user.password = "";
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "User login successful",
+      data: { accessToken, refreshToken, user },
+    });
+  })(req, res, next);
 });
 
 const getNewAccessToken = catchAsync(async (req, res) => {

@@ -15,13 +15,28 @@ import envVars from "./env.js";
 passport.use(
   new LocalStrategy(
     { usernameField: "email", passwordField: "password" },
-    async (email: string, password: string, done: VerifyCallback) => {
+    async (email: string, password: string, done) => {
       try {
         const user = await User.findOne({ email }).select("+password");
         if (!user) {
           return done(null, false, { message: "Wrong credentials" });
         }
-        const isMatched = bcrypt.compare(password, user.password as string);
+
+        const isGoogleAuthenticated = user.auths.some(
+          (providerObject) => providerObject.provider === IProvider.GOOGLE
+        );
+
+        if (isGoogleAuthenticated && !user.password) {
+          return done(null, false, {
+            message:
+              "You have authenticated through Google. So if you want to login with credentials, then at first login with google and set a password for your Email and then you can login with Email and Password",
+          });
+        }
+
+        const isMatched = await bcrypt.compare(
+          password,
+          user.password as string
+        );
         if (!isMatched) {
           return done(null, false, { message: "Wrong credentials" });
         }
