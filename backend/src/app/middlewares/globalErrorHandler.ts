@@ -3,6 +3,11 @@
 import type { NextFunction, Request, Response } from "express";
 import envVars from "../config/env.js";
 import AppError from "../errorHelpers/AppError.js";
+import handleCastError from "../helpers/handleCastError.js";
+import handleDuplicateError from "../helpers/handleDuplicateError.js";
+import handleValidationError from "../helpers/handleValidationError.js";
+import handleZodError from "../helpers/handleZodError.js";
+import type { TErrorSources } from "../interfaces/error.types.js";
 
 export const globalErrorHandler = (
   error: any,
@@ -12,34 +17,31 @@ export const globalErrorHandler = (
 ) => {
   let statusCode = 500;
   let message = `Something went wrong!`;
-  const errorSources: any = [];
+  let errorSources: TErrorSources[] = [];
+
+  if (envVars.NODE_ENV === "development") {
+    console.log(error);
+  }
 
   if (error.code === 11000) {
-    const matchedArray = error.message.match(/"([^"]*)"/);
-    statusCode = 400;
-    message = `${matchedArray[1]} already exists!`;
+    const simplifiedError = handleDuplicateError(error);
+    statusCode = simplifiedError.statusCode;
+    message = simplifiedError.message;
   } else if (error.name === "CastError") {
-    statusCode = 400;
-    message = "Invalid MongoDB ObjectID. Please provide a valid ID";
+    const simplifiedError = handleCastError(error);
+    statusCode = simplifiedError.statusCode;
+    message = simplifiedError.message;
   } else if (error.name === "ZodError") {
-    statusCode = 400;
-    message = "Zod Error";
-    error.issues.forEach((issue: any) => {
-      errorSources.push({
-        path: issue.path[issue.path.length - 1],
-        message: issue.message,
-      });
-    });
+    const simplifiedError = handleZodError(error);
+
+    statusCode = simplifiedError.statusCode;
+    message = simplifiedError.message;
+    errorSources = simplifiedError.errorSources as TErrorSources[];
   } else if (error.name === "ValidationError") {
-    statusCode = 400;
-    const errors = Object.values(error.errors);
-    errors.forEach((errorObject: any) =>
-      errorSources.push({
-        path: errorObject.path,
-        message: errorObject.message,
-      }),
-    );
-    message = "Validation Error";
+    const simplifiedError = handleValidationError(error);
+    statusCode = simplifiedError.statusCode;
+    errorSources = simplifiedError.errorSources as TErrorSources[];
+    message = simplifiedError.message;
   } else if (error instanceof AppError) {
     statusCode = error.statusCode;
     message = error.message;
@@ -51,7 +53,7 @@ export const globalErrorHandler = (
     success: false,
     message,
     errorSources,
-    error,
+    error: envVars.NODE_ENV === "development" ? error : null,
     stack: envVars.NODE_ENV === "development" ? error.stack : null,
   });
 };
