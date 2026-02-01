@@ -1,4 +1,4 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
 import type { ITour, ITourType } from "./tour.interface.js";
 
 const tourTypeSchema = new Schema<ITourType>(
@@ -28,8 +28,8 @@ const tourSchema = new Schema<ITour>(
     tourPlan: { type: [String], default: [] },
     maxGuest: { type: Number },
     minAge: { type: Number },
-    division: { type: Types.ObjectId, ref: "Division", required: true },
-    tourType: { type: Types.ObjectId, ref: "TourType", required: true },
+    division: { type: Schema.Types.ObjectId, ref: "Division", required: true },
+    tourType: { type: Schema.Types.ObjectId, ref: "TourType", required: true },
   },
   { timestamps: true },
 );
