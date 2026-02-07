@@ -21,14 +21,14 @@ router.post(
 );
 
 router.patch(
-  "/tour-types/:id",
+  "/tour-type/:id",
   checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
   validateRequest(createTourTypeZodSchema),
   TourController.updateTourType,
 );
 
 router.delete(
-  "/tour-types/:id",
+  "/tour-type/:id",
   checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
   TourController.deleteTourType,
 );
