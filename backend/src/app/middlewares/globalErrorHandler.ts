@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextFunction, Request, Response } from "express";
+import { cloudinaryUpload } from "../config/cloudinary.js";
 import envVars from "../config/env.js";
 import AppError from "../errorHelpers/AppError.js";
 import handleCastError from "../helpers/handleCastError.js";
@@ -49,11 +50,63 @@ export const globalErrorHandler = (
     message = error.message;
   }
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-    errorSources,
-    error: envVars.NODE_ENV === "development" ? error : null,
-    stack: envVars.NODE_ENV === "development" ? error.stack : null,
-  });
+  const requestWithFiles = req as Request & {
+    file?: { filename?: string };
+    files?: { filename?: string }[] | Record<string, { filename?: string }[]>;
+  };
+
+  const uploadedFileNames = new Set<string>();
+
+  if (requestWithFiles.file?.filename) {
+    uploadedFileNames.add(requestWithFiles.file.filename);
+  }
+
+  if (Array.isArray(requestWithFiles.files)) {
+    requestWithFiles.files.forEach((file) => {
+      if (file?.filename) {
+        uploadedFileNames.add(file.filename);
+      }
+    });
+  } else if (requestWithFiles.files && typeof requestWithFiles.files === "object") {
+    Object.values(requestWithFiles.files).forEach((fileList) => {
+      fileList.forEach((file) => {
+        if (file?.filename) {
+          uploadedFileNames.add(file.filename);
+        }
+      });
+    });
+  }
+
+  const sendErrorResponse = () => {
+    res.status(statusCode).json({
+      success: false,
+      message,
+      errorSources,
+      error: envVars.NODE_ENV === "development" ? error : null,
+      stack: envVars.NODE_ENV === "development" ? error.stack : null,
+    });
+  };
+
+  if (uploadedFileNames.size === 0) {
+    sendErrorResponse();
+    return;
+  }
+
+  Promise.allSettled(
+    Array.from(uploadedFileNames).map((fileName) =>
+      cloudinaryUpload.uploader.destroy(fileName),
+    ),
+  )
+    .then((results) => {
+      if (envVars.NODE_ENV === "development") {
+        results.forEach((result) => {
+          if (result.status === "rejected") {
+            console.log("Cloudinary cleanup failed:", result.reason);
+          }
+        });
+      }
+    })
+    .finally(() => {
+      sendErrorResponse();
+    });
 };

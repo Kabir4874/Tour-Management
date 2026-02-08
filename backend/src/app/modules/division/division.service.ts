@@ -1,4 +1,8 @@
 import { StatusCodes } from "http-status-codes";
+import {
+  cloudinaryUpload,
+  extractPublicIdFromCloudinaryUrl,
+} from "../../config/cloudinary.js";
 import AppError from "../../errorHelpers/AppError.js";
 import { generateUniqueSlug } from "../../utils/slug.js";
 import type { IDivision } from "./division.interface.js";
@@ -68,6 +72,18 @@ const updateDivision = async (id: string, payload: Partial<IDivision>) => {
     new: true,
     runValidators: true,
   });
+
+  if (
+    payload.thumbnail &&
+    existingDivision.thumbnail &&
+    payload.thumbnail !== existingDivision.thumbnail
+  ) {
+    const publicId = extractPublicIdFromCloudinaryUrl(existingDivision.thumbnail);
+    if (publicId) {
+      await cloudinaryUpload.uploader.destroy(publicId);
+    }
+  }
+
   return updatedDivision;
 };
 

@@ -4,27 +4,29 @@ import { cloudinaryUpload } from "./cloudinary.js";
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinaryUpload,
-  params: {
-    public_id: (req, file) => {
-      const fileName = file.originalname
-        .toLocaleLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/\./g, "-")
-        .replace(/[^a-z0-9.-]/g, "");
+  params: (req, file) => {
+    const originalNameWithoutExtension = file.originalname.replace(
+      /\.[^/.]+$/,
+      "",
+    );
 
-      const extension = file.originalname.split(".").pop();
+    const fileName = originalNameWithoutExtension
+      .toLocaleLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/\./g, "-")
+      .replace(/[^a-z0-9.-]/g, "");
 
-      const uniqueFileName =
-        Math.random().toString(36).substring(2) +
-        "-" +
-        Date.now() +
-        "-" +
-        fileName +
-        "." +
-        extension;
+    const uniqueFileName =
+      Math.random().toString(36).substring(2) +
+      "-" +
+      Date.now() +
+      "-" +
+      fileName;
 
-      return uniqueFileName;
-    },
+    return {
+      folder: "tour-management",
+      public_id: uniqueFileName,
+    };
   },
 });
 

@@ -8,3 +8,8 @@ cloudinary.config({
 });
 
 export const cloudinaryUpload = cloudinary;
+
+export const extractPublicIdFromCloudinaryUrl = (url: string) => {
+  const match = url.match(/\/upload\/(?:.*\/)?v\d+\/(.+)\.[a-zA-Z0-9]+(?:\?.*)?$/);
+  return match?.[1] ?? null;
+};
