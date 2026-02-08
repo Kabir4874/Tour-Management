@@ -1,4 +1,8 @@
 import { StatusCodes } from "http-status-codes";
+import {
+  cloudinaryUpload,
+  extractPublicIdFromCloudinaryUrl,
+} from "../../config/cloudinary.js";
 import AppError from "../../errorHelpers/AppError.js";
 import { QueryBuilder } from "../../utils/QueryBuilder.js";
 import { generateUniqueSlug } from "../../utils/slug.js";
@@ -57,6 +61,18 @@ const updateTour = async (id: string, payload: Partial<ITour>) => {
   }
 
   const updatedTour = await Tour.findByIdAndUpdate(id, payload, { new: true });
+
+  if (payload.images && payload.images.length > 0) {
+    await Promise.allSettled(
+      (existingTour.images ?? []).map(async (imageUrl) => {
+        const publicId = extractPublicIdFromCloudinaryUrl(imageUrl);
+        if (publicId) {
+          await cloudinaryUpload.uploader.destroy(publicId);
+        }
+      }),
+    );
+  }
+
   return updatedTour;
 };
 
