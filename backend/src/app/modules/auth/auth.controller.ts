@@ -26,7 +26,7 @@ const credentialsLogin = catchAsync(async (req, res, next) => {
       { accessToken, refreshToken },
       {
         secure: envVars.NODE_ENV === "production",
-      }
+      },
     );
     user.password = "";
     sendResponse(res, {
@@ -50,7 +50,7 @@ const getNewAccessToken = catchAsync(async (req, res) => {
     { accessToken },
     {
       secure: envVars.NODE_ENV === "production",
-    }
+    },
   );
 
   sendResponse(res, {
@@ -92,6 +92,29 @@ const resetPassword = catchAsync(async (req, res) => {
     data: null,
   });
 });
+const changePassword = catchAsync(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const decodedToken = req.user as JwtPayload;
+  await Authservice.resetPassword(oldPassword, newPassword, decodedToken);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Password change success",
+    data: null,
+  });
+});
+
+const setPassword = catchAsync(async (req, res) => {
+  const { password } = req.body;
+  const decodedToken = req.user as JwtPayload;
+  await Authservice.setPassword(decodedToken.userId, password);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Password set success",
+    data: null,
+  });
+});
 
 const googleLogin = catchAsync(async (req, res) => {
   const redirect = req.query.redirect || "/";
@@ -117,7 +140,7 @@ const googleCallback = catchAsync(async (req, res) => {
     { accessToken, refreshToken },
     {
       secure: envVars.NODE_ENV === "production",
-    }
+    },
   );
 
   res.redirect(`${envVars.FRONTEND_URL}/${redirectTo}`);
@@ -128,6 +151,8 @@ export const AuthController = {
   getNewAccessToken,
   logout,
   resetPassword,
+  changePassword,
+  setPassword,
   googleLogin,
   googleCallback,
 };

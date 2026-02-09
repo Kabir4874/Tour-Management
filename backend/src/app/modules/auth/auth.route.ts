@@ -10,14 +10,24 @@ router.post("/login", AuthController.credentialsLogin);
 router.post("/refresh-token", AuthController.getNewAccessToken);
 router.post("/logout", AuthController.logout);
 router.post(
+  "/change-password",
+  checkAuth(...Object.values(Role)),
+  AuthController.changePassword,
+);
+router.post(
   "/reset-password",
   checkAuth(...Object.values(Role)),
-  AuthController.resetPassword
+  AuthController.resetPassword,
+);
+router.post(
+  "/set-password",
+  checkAuth(...Object.values(Role)),
+  AuthController.setPassword,
 );
 router.get("/google", AuthController.googleLogin);
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
-  AuthController.googleCallback
+  AuthController.googleCallback,
 );
 export const AuthRoutes = router;
