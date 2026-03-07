@@ -18,7 +18,9 @@ const getNewAccessToken = async (refreshToken: string) => {
     envVars.JWT_REFRESH_SECRET,
   ) as JwtPayload;
 
-  const user = await User.findById(verifiedRefreshToken.userId);
+  const user = await User.findById(verifiedRefreshToken.userId).select(
+    "-password",
+  );
 
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, "User does not exist");
