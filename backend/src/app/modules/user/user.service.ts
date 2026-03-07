@@ -3,6 +3,8 @@ import { StatusCodes } from "http-status-codes";
 import type { JwtPayload } from "jsonwebtoken";
 import envVars from "../../config/env.js";
 import AppError from "../../errorHelpers/AppError.js";
+import { QueryBuilder } from "../../utils/QueryBuilder.js";
+import { userSearchableFields } from "./user.constant.js";
 import {
   IProvider,
   Role,
@@ -22,7 +24,7 @@ const createUser = async (payload: IUser) => {
 
   const hashedPassword = await bcrypt.hash(
     password as string,
-    envVars.BCRYPT_SALT_ROUND
+    envVars.BCRYPT_SALT_ROUND,
   );
 
   const authProvider: IAuthProvider = {
@@ -41,22 +43,28 @@ const createUser = async (payload: IUser) => {
   return user;
 };
 
-const getAllUsers = async () => {
-  const users = await User.find();
-  const totalUsers = await User.countDocuments();
+const getAllUsers = async (query: Record<string, string>) => {
+  const queryBuilder = new QueryBuilder(User.find().select("-password"), query);
 
-  return {
-    data: users,
-    meta: {
-      total: totalUsers,
-    },
-  };
+  const users = queryBuilder
+    .search(userSearchableFields)
+    .filter()
+    .sort()
+    .fields()
+    .paginate();
+
+  const [data, meta] = await Promise.all([
+    users.build(),
+    queryBuilder.getMeta(),
+  ]);
+
+  return { data, meta };
 };
 
 const updateUser = async (
   userId: string,
   payload: Partial<IUser>,
-  decodedToken: JwtPayload
+  decodedToken: JwtPayload,
 ) => {
   const isUserExist = await User.findById(userId);
   if (!isUserExist) {
@@ -66,7 +74,7 @@ const updateUser = async (
   if ("auths" in payload) {
     throw new AppError(
       StatusCodes.FORBIDDEN,
-      "You cannot update auth providers"
+      "You cannot update auth providers",
     );
   }
 
@@ -80,7 +88,7 @@ const updateUser = async (
     ) {
       throw new AppError(
         StatusCodes.FORBIDDEN,
-        "Only super admins can assign super admin role"
+        "Only super admins can assign super admin role",
       );
     }
   }
@@ -98,20 +106,38 @@ const updateUser = async (
   if (payload.password) {
     payload.password = await bcrypt.hash(
       payload.password,
-      envVars.BCRYPT_SALT_ROUND
+      envVars.BCRYPT_SALT_ROUND,
     );
   }
 
   const updatedUser = await User.findByIdAndUpdate(userId, payload, {
     new: true,
     runValidators: true,
-  });
+  }).select("-password");
 
   return updatedUser;
+};
+
+const getMe = async (userId: string) => {
+  const user = await User.findById(userId).select("-password");
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  return user;
+};
+
+const getSingleUser = async (userId: string) => {
+  const user = await User.findById(userId).select("-password");
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  return user;
 };
 
 export const UserService = {
   createUser,
   getAllUsers,
   updateUser,
+  getMe,
+  getSingleUser,
 };

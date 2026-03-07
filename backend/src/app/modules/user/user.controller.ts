@@ -15,13 +15,37 @@ const createUser = catchAsync(async (req, res) => {
 });
 
 const getAllUsers = catchAsync(async (req, res) => {
-  const result = await UserService.getAllUsers();
+  const result = await UserService.getAllUsers(
+    req.query as Record<string, string>,
+  );
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
     message: "Users retrieved successfully",
     data: result.data,
     meta: result.meta,
+  });
+});
+
+const getMe = catchAsync(async (req, res) => {
+  const verifiedToken = req.user as JwtPayload;
+  const user = await UserService.getMe(verifiedToken.userId);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "User retrieved successfully",
+    data: user,
+  });
+});
+
+const getSingleUser = catchAsync(async (req, res) => {
+  const userId = req.params.id as string;
+  const user = await UserService.getSingleUser(userId);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "User retrieved successfully",
+    data: user,
   });
 });
 
@@ -40,5 +64,7 @@ const updateUser = catchAsync(async (req, res) => {
 export const UserController = {
   createUser,
   getAllUsers,
+  getMe,
+  getSingleUser,
   updateUser,
 };
