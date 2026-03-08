@@ -3,7 +3,7 @@ import checkAuth from "../../middlewares/checkAuth.js";
 import validateRequest from "../../middlewares/validateRequest.js";
 import { UserController } from "./user.controller.js";
 import { Role } from "./user.interface.js";
-import { createUserZodSchema } from "./user.validation.js";
+import { createUserZodSchema, updateUserZodSchema } from "./user.validation.js";
 
 const router = Router();
 
@@ -26,6 +26,7 @@ router.get(
 router.patch(
   "/:id",
   checkAuth(...Object.values(Role)),
+  validateRequest(updateUserZodSchema),
   UserController.updateUser,
 );
 
