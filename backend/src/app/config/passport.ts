@@ -8,7 +8,12 @@ import {
   type VerifyCallback,
 } from "passport-google-oauth20";
 import { Strategy as LocalStrategy } from "passport-local";
-import { IProvider, Role, type IUser } from "../modules/user/user.interface.js";
+import {
+  IProvider,
+  IsActive,
+  Role,
+  type IUser,
+} from "../modules/user/user.interface.js";
 import User from "../modules/user/user.model.js";
 import envVars from "./env.js";
 
@@ -22,8 +27,22 @@ passport.use(
           return done(null, false, { message: "Wrong credentials" });
         }
 
+        if (!user.isVerified) {
+          return done(`User is not verified`);
+        }
+        if (
+          user.isActive === IsActive.BLOCKED ||
+          user.isActive === IsActive.INACTIVE
+        ) {
+          return done(`User is ${user.isActive}`);
+        }
+
+        if (user.isDeleted) {
+          return done("User is deleted");
+        }
+
         const isGoogleAuthenticated = user.auths.some(
-          (providerObject) => providerObject.provider === IProvider.GOOGLE
+          (providerObject) => providerObject.provider === IProvider.GOOGLE,
         );
 
         if (isGoogleAuthenticated && !user.password) {
@@ -35,7 +54,7 @@ passport.use(
 
         const isMatched = await bcrypt.compare(
           password,
-          user.password as string
+          user.password as string,
         );
         if (!isMatched) {
           return done(null, false, { message: "Wrong credentials" });
@@ -46,8 +65,8 @@ passport.use(
         console.log("Custom strategy error", error);
         return done(error);
       }
-    }
-  )
+    },
+  ),
 );
 
 passport.use(
@@ -61,7 +80,7 @@ passport.use(
       accessToken: string,
       refreshToken: string,
       profile: Profile,
-      done: VerifyCallback
+      done: VerifyCallback,
     ) => {
       try {
         const email = profile.emails?.[0]?.value;
@@ -87,6 +106,20 @@ passport.use(
           }
 
           user = await User.create(userData);
+        } else {
+          if (!user.isVerified) {
+            return done(`User is not verified`);
+          }
+          if (
+            user.isActive === IsActive.BLOCKED ||
+            user.isActive === IsActive.INACTIVE
+          ) {
+            return done(`User is ${user.isActive}`);
+          }
+
+          if (user.isDeleted) {
+            return done("User is deleted");
+          }
         }
 
         return done(null, user, { message: "Registration successful" });
@@ -94,8 +127,8 @@ passport.use(
         console.log("Google strategy error", error);
         return done(error);
       }
-    }
-  )
+    },
+  ),
 );
 
 passport.serializeUser((user: any, done: (err: any, id?: unknown) => void) => {
