@@ -18,7 +18,7 @@ const checkAuth =
 
       const verifiedToken = verifyToken(
         accessToken,
-        envVars.JWT_ACCESS_SECRET
+        envVars.JWT_ACCESS_SECRET,
       ) as JwtPayload;
 
       const user = await User.findById(verifiedToken.userId);
@@ -33,6 +33,10 @@ const checkAuth =
         throw new AppError(StatusCodes.BAD_REQUEST, `User is ${user.isActive}`);
       }
 
+      if (!user.isVerified) {
+        throw new AppError(StatusCodes.BAD_REQUEST, `User is not verified`);
+      }
+
       if (user.isDeleted) {
         throw new AppError(StatusCodes.BAD_REQUEST, "User is deleted");
       }
@@ -40,7 +44,7 @@ const checkAuth =
       if (!authRoles.includes(verifiedToken.role)) {
         throw new AppError(
           StatusCodes.UNAUTHORIZED,
-          "You are not permitted to view this content"
+          "You are not permitted to view this content",
         );
       }
 

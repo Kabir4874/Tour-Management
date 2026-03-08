@@ -1,5 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
+import envVars from "../../config/env.js";
 import checkAuth from "../../middlewares/checkAuth.js";
 import { Role } from "../user/user.interface.js";
 import { AuthController } from "./auth.controller.js";
@@ -27,7 +28,9 @@ router.post(
 router.get("/google", AuthController.googleLogin);
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    failureRedirect: `${envVars.FRONTEND_URL}/login?error=There is some issues with your account. Please contact to our support team!`,
+  }),
   AuthController.googleCallback,
 );
 export const AuthRoutes = router;

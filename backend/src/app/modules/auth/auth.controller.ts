@@ -11,13 +11,13 @@ import { Authservice } from "./auth.service.js";
 
 const credentialsLogin = catchAsync(async (req, res, next) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  passport.authenticate("local", async (error: any, user: any, info: any) => {
+  passport.authenticate("local", async (error: any, user: any) => {
     if (error) {
       return next(error);
     }
 
     if (!user) {
-      return next(new AppError(401, info.message));
+      return next(new AppError(error.statusCode, error.message));
     }
 
     const { accessToken, refreshToken } = createTokens(user);
