@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import { uploadBufferToCloudinary } from "../../config/cloudinary.js";
 import AppError from "../../errorHelpers/AppError.js";
 import { generatePdf, type IInvoiceData } from "../../utils/invoice.js";
 import { sendEmail } from "../../utils/sendEmail.js";
@@ -90,6 +91,19 @@ const successPayment = async (query: Record<string, string>) => {
     };
 
     const pdfBuffer = await generatePdf(invoiceData);
+
+    const cloudinaryResult = await uploadBufferToCloudinary(
+      pdfBuffer,
+      "invoice",
+    );
+
+    await Payment.findByIdAndUpdate(
+      updatedPayment._id,
+      {
+        invoiceUrl: cloudinaryResult.secure_url,
+      },
+      { runValidators: true, session },
+    );
 
     await sendEmail({
       to: (updatedBooking.user as unknown as IUser).email,
@@ -198,9 +212,27 @@ const cancelPayment = async (query: Record<string, string>) => {
   }
 };
 
+const getInvoiceDownloadUrl = async (paymentId: string) => {
+  const payment = await Payment.findById(paymentId).select("invoiceUrl");
+
+  if (!payment) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Payment not found");
+  }
+  if (!payment.invoiceUrl) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Invoice not available yet");
+  }
+
+  return {
+    success: true,
+    message: "Invoice ready to download",
+    downloadUrl: payment.invoiceUrl,
+  };
+};
+
 export const PaymentService = {
   initPayment,
   successPayment,
   failPayment,
   cancelPayment,
+  getInvoiceDownloadUrl,
 };
