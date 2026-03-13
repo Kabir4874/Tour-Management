@@ -28,6 +28,7 @@ interface EnvConfig {
     STORE_PASS: string;
     PAYMENT_API: string;
     VALIDATION_API: string;
+    IPN_URL: string;
     SUCCESS_BACKEND_URL: string;
     FAIL_BACKEND_URL: string;
     CANCEL_BACKEND_URL: string;
@@ -41,6 +42,12 @@ interface EnvConfig {
     SMTP_USER: string;
     SMTP_PASS: string;
     SMTP_FROM: string;
+  };
+  REDIS: {
+    USERNAME: string;
+    PASSWORD: string;
+    HOST: string;
+    PORT: number;
   };
 }
 
@@ -68,6 +75,7 @@ const loadEnvVariables = (): EnvConfig => {
     "SSL_STORE_PASS",
     "SSL_PAYMENT_API",
     "SSL_VALIDATION_API",
+    "SSL_IPN_URL",
     "SSL_SUCCESS_BACKEND_URL",
     "SSL_FAIL_BACKEND_URL",
     "SSL_CANCEL_BACKEND_URL",
@@ -79,6 +87,10 @@ const loadEnvVariables = (): EnvConfig => {
     "SMTP_USER",
     "SMTP_PASS",
     "SMTP_FROM",
+    "REDIS_USERNAME",
+    "REDIS_PASSWORD",
+    "REDIS_HOST",
+    "REDIS_PORT",
   ];
   requiredEnvVariables.forEach((key) => {
     if (!process.env[key]) {
@@ -111,6 +123,7 @@ const loadEnvVariables = (): EnvConfig => {
       STORE_PASS: process.env.SSL_STORE_PASS as string,
       PAYMENT_API: process.env.SSL_PAYMENT_API as string,
       VALIDATION_API: process.env.SSL_VALIDATION_API as string,
+      IPN_URL: process.env.SSL_IPN_URL as string,
       SUCCESS_BACKEND_URL: process.env.SSL_SUCCESS_BACKEND_URL as string,
       FAIL_BACKEND_URL: process.env.SSL_FAIL_BACKEND_URL as string,
       CANCEL_BACKEND_URL: process.env.SSL_CANCEL_BACKEND_URL as string,
@@ -124,6 +137,12 @@ const loadEnvVariables = (): EnvConfig => {
       SMTP_USER: process.env.SMTP_USER as string,
       SMTP_PASS: process.env.SMTP_PASS as string,
       SMTP_FROM: process.env.SMTP_FROM as string,
+    },
+    REDIS: {
+      USERNAME: process.env.REDIS_USERNAME as string,
+      PASSWORD: process.env.REDIS_PASSWORD as string,
+      HOST: process.env.REDIS_HOST as string,
+      PORT: parseInt(process.env.REDIS_PORT as string),
     },
   };
 };

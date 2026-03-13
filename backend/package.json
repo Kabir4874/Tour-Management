@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node ./dist/server.js",
     "dev": "tsx watch src/server.ts",
+    "build": "tsc",
     "lint": "npx eslint ./src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -33,9 +35,10 @@
   "dependencies": {
     "@types/ejs": "^3.1.5",
     "@types/nodemailer": "^7.0.11",
+    "@types/pdfkit": "^0.17.5",
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.9.0",
+    "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -51,6 +54,8 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
+    "pdfkit": "^0.17.2",
+    "redis": "^5.11.0",
     "zod": "^4.1.13"
   }
 }
