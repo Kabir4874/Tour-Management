@@ -4,10 +4,12 @@ import passport from "passport";
 import envVars from "../../config/env.js";
 import AppError from "../../errorHelpers/AppError.js";
 import { catchAsync } from "../../utils/catchAsync.js";
-import { setAuthCookies } from "../../utils/cookie.js";
+import { clearAuthCookies, setAuthCookies } from "../../utils/cookie.js";
 import sendResponse from "../../utils/sendResponse.js";
 import { createTokens } from "../../utils/token.js";
 import { Authservice } from "./auth.service.js";
+
+const isProduction = envVars.NODE_ENV === "production";
 
 const credentialsLogin = catchAsync(async (req, res, next) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +27,7 @@ const credentialsLogin = catchAsync(async (req, res, next) => {
       res,
       { accessToken, refreshToken },
       {
-        secure: envVars.NODE_ENV === "production",
+        isProduction,
       },
     );
     user.password = "";
@@ -49,7 +51,7 @@ const getNewAccessToken = catchAsync(async (req, res) => {
     res,
     { accessToken },
     {
-      secure: envVars.NODE_ENV === "production",
+      isProduction,
     },
   );
 
@@ -62,16 +64,7 @@ const getNewAccessToken = catchAsync(async (req, res) => {
 });
 
 const logout = catchAsync(async (req, res) => {
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: envVars.NODE_ENV === "production",
-    sameSite: "lax",
-  });
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: envVars.NODE_ENV === "production",
-    sameSite: "lax",
-  });
+  clearAuthCookies(res, isProduction);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -152,7 +145,7 @@ const googleCallback = catchAsync(async (req, res) => {
     res,
     { accessToken, refreshToken },
     {
-      secure: envVars.NODE_ENV === "production",
+      isProduction,
     },
   );
 
