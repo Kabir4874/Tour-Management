@@ -28,17 +28,17 @@ passport.use(
         }
 
         if (!user.isVerified) {
-          return done(`User is not verified`);
+          return done(null, false, { message: "User is not verified" });
         }
         if (
           user.isActive === IsActive.BLOCKED ||
           user.isActive === IsActive.INACTIVE
         ) {
-          return done(`User is ${user.isActive}`);
+          return done(null, false, { message: `User is ${user.isActive}` });
         }
 
         if (user.isDeleted) {
-          return done("User is deleted");
+          return done(null, false, { message: "User is deleted" });
         }
 
         const isGoogleAuthenticated = user.auths.some(
@@ -108,17 +108,17 @@ passport.use(
           user = await User.create(userData);
         } else {
           if (!user.isVerified) {
-            return done(`User is not verified`);
+            return done(null, false, { message: "User is not verified" });
           }
           if (
             user.isActive === IsActive.BLOCKED ||
             user.isActive === IsActive.INACTIVE
           ) {
-            return done(`User is ${user.isActive}`);
+            return done(null, false, { message: `User is ${user.isActive}` });
           }
 
           if (user.isDeleted) {
-            return done("User is deleted");
+            return done(null, false, { message: "User is deleted" });
           }
         }
 

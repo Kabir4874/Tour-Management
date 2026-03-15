@@ -11,15 +11,32 @@ import { Authservice } from "./auth.service.js";
 
 const isProduction = envVars.NODE_ENV === "production";
 
+const getAuthFailureStatusCode = (message?: string) => {
+  if (message === "Wrong credentials" || message === "User is not verified") {
+    return StatusCodes.UNAUTHORIZED;
+  }
+
+  return StatusCodes.BAD_REQUEST;
+};
+
 const credentialsLogin = catchAsync(async (req, res, next) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  passport.authenticate("local", async (error: any, user: any) => {
+  passport.authenticate("local", async (error: any, user: any, info: any) => {
     if (error) {
-      return next(error);
+      if (error instanceof Error) {
+        return next(new AppError(StatusCodes.UNAUTHORIZED, error.message));
+      }
+
+      return next(new AppError(StatusCodes.UNAUTHORIZED, String(error)));
     }
 
     if (!user) {
-      return next(new AppError(error.statusCode, error.message));
+      return next(
+        new AppError(
+          getAuthFailureStatusCode(info?.message),
+          info?.message || "Authentication failed",
+        ),
+      );
     }
 
     const { accessToken, refreshToken } = createTokens(user);
